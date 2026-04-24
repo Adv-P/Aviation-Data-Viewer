@@ -8,7 +8,7 @@ def get_metar_data():
     }
     response = requests.get(api_url, headers=headers)
     if response.status_code == 200:
-        print(response.text)
+        return response.text
     else:
         print(f"Error:{response.status_code}!")
 

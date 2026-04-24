@@ -22,3 +22,18 @@ class METARApp(QWidget):
         self.visibility_label = QLabel("10+ sm") #Visibility is currently a placeholder
         self.ceiling_label = QLabel("700 feet AGL") #Ceiling is currently a placeholder
         self.clouds_label = QLabel("few clouds aaat 1400 feet AGL, broken clouds at 7000 feet AGL, overcast cloud deck at 8000 feet AGL") #Cloud cover is currently a placeholder
+
+        #Layout
+        vbox = QVBoxLayout() #Vertical box layout (vbox)
+        vbox.addWidget(self.airportid_label)
+        vbox.addWidget(self.airportid_label)
+        vbox.addWidget(self.get_metar_button)
+        vbox.addWidget(self.temperature_label)
+        vbox.addWidget(self.dewpoint_label)
+        vbox.addWidget(self.altimeter_label)
+        vbox.addWidget(self.sea_level_pressure_label)
+        vbox.addWidget(self.winds_label)
+        vbox.addWidget(self.visibility_label)
+        vbox.addWidget(self.ceiling_label)
+        vbox.addWidget(self.clouds_label)
+        self.setLayout(vbox)
