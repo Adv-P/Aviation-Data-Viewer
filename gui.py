@@ -15,14 +15,17 @@ class METARApp(QWidget):
         self.get_metar_button = QPushButton("Get METAR",self)
 
         #Labels to display the METAR data
-        self.temperature_label = QLabel("6.7C (44.1F)",self) #Temperature is currently a placeholder
-        self.dewpoint_label = QLabel("3.3C (37.9F)",self) #Dewpoint is currently a placeholder
-        self.altimeter_label = QLabel("29.91 inches Hg (1013 mb)",self) #Altimeter is currently a placeholder
-        self.sea_level_pressure_label = QLabel("1012.8 mb") #Sea level pressure is currently a placeholder
-        self.winds_label = QLabel("from 330 degrees at 15 knots gusting to 23 knots",self) #Winds is currently a placeholder
-        self.visibility_label = QLabel("10+ sm") #Visibility is currently a placeholder
-        self.ceiling_label = QLabel("700 feet AGL") #Ceiling is currently a placeholder
-        self.clouds_label = QLabel("few clouds aaat 1400 feet AGL, broken clouds at 7000 feet AGL, overcast cloud deck at 8000 feet AGL") #Cloud cover is currently a placeholder
+        self.temperature_label = QLabel("",self)
+        self.dewpoint_label = QLabel("",self)
+        self.altimeter_label = QLabel("",self)
+        self.sea_level_pressure_label = QLabel("",self)
+        self.winds_label = QLabel("",self)
+        self.visibility_label = QLabel("",self)
+        self.ceiling_label = QLabel("",self)
+        self.clouds_label = QLabel("",self)
+
+        #Label to display error:
+        self.display_error = QLabel("", self)
 
         #Calling the initUI function
         self.initUI()
@@ -86,15 +89,45 @@ class METARApp(QWidget):
             QLabel#get_metar_button{
                 font-size: 38px;
             }
-
+            QLabel#airportid_input{
+                font-size: 25px;
+            }
         """)
 
         #Adding functionality to the button
         self.get_metar_button.clicked.connect(self.get_metar)
 
-    #Getting the METAR data
+    #Getting the METAR data and displaying it
     def get_metar(self):
-        print("Metar") #Placeholder; checking if the button is working
+        airport_id = self.airportid_input.text().upper()
+        
+        #Handles errors
+        try:
+            metar_text = get_metar_data()
+            if metar_text:
+                lines = metar_text.split('\n')
+                for line in lines:
+                    clean_line = line.strip()
+                    if "Temperature" in clean_line:
+                        self.temperature_label.setText(clean_line)
+                    elif "Dew point" in clean_line:
+                        self.dewpoint_label.setText(clean_line)
+                    elif "Wind" in clean_line:
+                        self.winds_label.setText(clean_line)
+                    elif "Visibility" in clean_line:
+                        self.visibility_label.setText(clean_line)
+                    elif "Ceiling" in clean_line:
+                        self.ceiling_label.setText(clean_line)
+                    elif "Cloud" in clean_line:
+                        self.clouds_label.setText(clean_line)
+                    elif "Altimeter" in clean_line:
+                        self.altimeter_label.setText(clean_line)
+                    elif "Pressure" in clean_line:
+                        self.sea_level_pressure_label.setText(clean_line)
+            else:
+                self.display_error("No data found for this ID! Please eneter another ID.")
+        except Exception as e:
+            self.display_error(f"Error {str(e)}")
 
     #Handling errors
     def errors(self,error):
