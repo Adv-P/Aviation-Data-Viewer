@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QLabel,
                             QLineEdit, QPushButton, QVBoxLayout,
                             QTabWidget,QMessageBox)
 from PyQt5.QtCore import Qt
+import requests
 from data import get_metar_data
 
 #Initializing the UI
@@ -112,15 +113,15 @@ class METARApp(QWidget):
         """)
 
         #Adding functionality to the button
-        self.get_metar_button.clicked.connect(self.get_metar)
+        self.get_metar_button.clicked.connect(self.display_metar)
 
-    #Getting the METAR data and displaying it
-    def get_metar(self):
+    #Displaying the METAR data
+    def display_metar(self):
         airport_id = self.airportid_input.text().upper()
         
         #Displaying text
         try:
-            metar_text = get_metar_data()
+            metar_text = get_metar_data(airport_id)
             if metar_text:
                 lines = metar_text.split('\n')
                 for line in lines:
@@ -147,11 +148,3 @@ class METARApp(QWidget):
                 QMessageBox.critical(self, "ERROR", "Please try a different ID")
         except Exception as e:
             QMessageBox(self, "ERROR", "An error occured:" + str(e))
-
-    #Handling errors
-    def errors(self,error):
-        pass
-
-    #Displaying the METAR data
-    def display_metar(self,data):
-        pass
