@@ -10,7 +10,6 @@ def get_values():
     metar_text = get_metar_data()
     print(metar_text)
 
-
 #Running the program
 if __name__ == "__main__":
     app = QApplication(sys.argv)
