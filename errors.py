@@ -1,33 +1,30 @@
-import requests 
-from PyQt5.QtWidgets import QMessageBox
-from data import get_metar_data
-
 #Handling errors
-def handle_errors(response_obj):
+def handle_errors(response_obj, error_msg):
     match response_obj.status_code:
         case 400:
-            return ("Bad request: \n Please check your input")
+            error_msg = "Bad Request:\nPlease check your input"
+            return (error_msg,response_obj)
         case 401:
-            return("Unauthorized:\nInvalid API key")
+            error_msg = "Unauthorized:\nInvalid API key"
+            return (error_msg,response_obj)
         case 403:
-            return("Forbidden:\nAccess is denied")
-        case 404:
-            return("Not found:\nAirport ID not found")
+            error_msg = "Forbidden:\nAccess is denied"
+            return (error_msg,response_obj)
+        case 404: 
+            error_msg = "Not found:\nAirport ID not found"
+            return (error_msg,response_obj)
         case 500:
-            return("Internal Server Error:\nPlease try again later")
+            error_msg = "Internal Server Error:\nPlease try again later"
+            return (error_msg,response_obj)
         case 502:
-            return("Bad Gateway:\nInvalid response from the server")
+            error_msg = "Bad Gateway:\nInvalid response from the server"
+            return (error_msg,response_obj)
         case 503:
-            return("Service Unavailable:\nServer is down")
+            error_msg = "Service Unavailable:\nServer is down"
+            return (error_msg,response_obj)
         case 504:
-            return("Gateway Timeout:\nNo response from the server")
+            error_msg = "Gateway Timeout:\nNo response from the server"
+            return (error_msg,response_obj)
         case http_error:
-            return(f"HTTP error occurred:\n{http_error}")
-        
-    if isinstance(error, requests.exceptions.ConnectionError):
-        return("Connection Error:\nCheck your internet connection")
-    if isinstance(error, requests.exceptions.Timeout):
-        return("Timeout Error:\nThe request timed out")
-    if isinstance(error, requests.exceptions.TooManyRedirects):
-        return("Too many Redirects:\nCheck the URL")
- 
+            error_msg = f"HTTP error occurred:\n{http_error}"
+            return (error_msg,response_obj)

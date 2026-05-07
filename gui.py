@@ -1,9 +1,10 @@
-from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, 
+from PyQt5.QtWidgets import (QWidget, QLabel, 
                             QLineEdit, QPushButton, QVBoxLayout,
                             QTabWidget,QMessageBox)
 from PyQt5.QtCore import Qt
 import requests
 from data import get_metar_data
+from errors import handle_errors
 
 #Initializing the UI
 class METARApp(QWidget):
@@ -27,7 +28,7 @@ class METARApp(QWidget):
         self.clouds_label = QLabel("",self)
 
         #Label to display error
-        self.display_error = QTabWidget(self)
+        self.display_error = QTabWidget()
 
         #Calling the initUI function
         self.initUI()
@@ -117,34 +118,41 @@ class METARApp(QWidget):
 
     #Displaying the METAR data
     def display_metar(self):
-        airport_id = self.airportid_input.text().upper()
-        
-        #Displaying text
         try:
+            airport_id = self.airportid_input.text().upper()
+            #Displaying text
             metar_text = get_metar_data(airport_id)
-            if metar_text:
-                lines = metar_text.split('\n')
-                for line in lines:
-                    clean_line = line.strip()
-                    if "Temperature" in clean_line:
-                        self.temperature_label.setText(clean_line)
-                    elif "Dewpoint" in clean_line:
-                        self.dewpoint_label.setText(clean_line)
-                    elif "Sea level pressure" in clean_line:
-                        self.sea_level_pressure_label.setText(clean_line)
-                    elif "Wind" in clean_line:
-                        self.winds_label.setText(clean_line)
-                    elif "Visibility" in clean_line:
-                        self.visibility_label.setText(clean_line)
-                    elif "Ceiling" in clean_line:
-                        self.ceiling_label.setText(clean_line)
-                    elif "Cloud" in clean_line:
-                        self.clouds_label.setText(clean_line)
-                    elif "Altimeter" in clean_line:
-                        self.altimeter_label.setText(clean_line)
-                    elif "Pressure" in clean_line:
-                        self.sea_level_pressure_label.setText(clean_line)
-            else:
-                QMessageBox.critical(self, "ERROR", "Please try a different ID")
-        except Exception as e:
-            QMessageBox(self, "ERROR", "An error occured:" + str(e))
+            print(metar_text)
+            if metar_text[0][0] == 200:
+                if metar_text:
+                    lines = metar_text[1].split('\n')
+                    for line in lines:
+                        clean_line = line.strip()
+                        if "Temperature" in clean_line:
+                            self.temperature_label.setText(clean_line)
+                        elif "Dewpoint" in clean_line:
+                            self.dewpoint_label.setText(clean_line)
+                        elif "Sea level pressure" in clean_line:
+                            self.sea_level_pressure_label.setText(clean_line)
+                        elif "Wind" in clean_line:
+                            self.winds_label.setText(clean_line)
+                        elif "Visibility" in clean_line:
+                            self.visibility_label.setText(clean_line)
+                        elif "Ceiling" in clean_line:
+                            self.ceiling_label.setText(clean_line)
+                        elif "Cloud" in clean_line:
+                            self.clouds_label.setText(clean_line)
+                        elif "Altimeter" in clean_line:
+                            self.altimeter_label.setText(clean_line)
+                        elif "Pressure" in clean_line:
+                            self.sea_level_pressure_label.setText(clean_line)
+            elif metar_text[[1]] != 200:
+                error_message = handle_errors(metar_text[0], "")
+                QMessageBox.critical(self, "ERROR!", error_message[0])
+
+        except requests.exceptions.ConnectionError:
+            QMessageBox.critical(self, "ERROR!", "Connection Error:\nCheck your internet connection")
+        except requests.exceptions.Timeout:
+            QMessageBox.critical(self, "ERROR!", "Timeout Error:\nThe request timed out")
+        except requests.exceptions.TooManyRedirects:
+            QMessageBox.critical(self, "ERROR!", "Too many Redirects:\nCheck the URL")
