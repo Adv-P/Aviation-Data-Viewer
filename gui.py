@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
                             QTabWidget,QMessageBox)
 from PyQt5.QtCore import Qt
 import requests
-from data import get_metar_data
+from data import get_metar_data, get_icao_code
 from errors import handle_errors
 
 #Initializing the UI
@@ -119,12 +119,32 @@ class METARApp(QWidget):
     #Displaying the METAR data
     def display_metar(self):
         try:
-            airport_id = self.airportid_input.text().upper()
+            user_input = self.airportid_input.text().strip()
+
+            #Check if input is empty
+            if not user_input:
+                QMessageBox.warning(self, "Input Error", "Please enter an airport ID.")
+                return
             
+            #Determine if the input is an ICAO code
+            if len(user_input) == 4 and user_input.isalpha():
+                print("ICAO code detected.") #For debugging purposes
+                airport_id = user_input.upper()
+            else:
+                airport_id = get_icao_code(user_input)
+                
+                if airport_id is None:
+                    QMessageBox.warning(self, "Input Error", "Airport name not found.")
+
+                if not airport_id:
+                    QMessageBox.warning(self, "Input Error", "Airport not found. Please enter a valid airport name or ICAO code.")
+                return
+    
+
             #Displaying text
             metar_text = get_metar_data(airport_id)
             response_obj = metar_text[0]
-            print(metar_text)
+            print(metar_text) #For debugging purposes
             if response_obj.status_code == 200:
                 if metar_text:
                     lines = response_obj.text.split('\n')
