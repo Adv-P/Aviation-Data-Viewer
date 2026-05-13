@@ -48,7 +48,7 @@ def handle_errors(response_obj, error_msg):
             error_msg = "Non-Authoritative Information:\nThe request was successful but the information may be from a third party"
             return (error_msg,response_obj)
         case 204:
-            error_msg = "No Content:\nThe request was successful but there is no content to return"
+            error_msg = "No Content:\nThe request was successful but there is no content to return. Please try again"
             return (error_msg,response_obj)
         case 205:
             error_msg = "Reset Content:\nThe request was successful but the client should reset the view"

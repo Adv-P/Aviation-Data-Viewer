@@ -25,36 +25,26 @@ def get_icao_code(airport_name):
             messages=[
                 {
                     "role": "system", 
-                    "content": "You are an assistant that helps match airport names to their"
-                    "corresponding ICAO codes using the data from airports.csv. The user will "
-                    "provide an airport name, and you will search through the airports.csv file "
-                    "to find the matching ICAO code. If a match is found, return the ICAO code."
-                    "If no match is found, return None. If the user input is empty, return an error."
-                    "If there are multiple matches, return the possible airport names, to let the"
-                    "user choose the correct one. The airports.csv file has the following format: "
-                    "id,ident,type,name,latitude_deg,longitude_deg,elevation_ft,continent,iso_country,iso_region,municipality,gps_code,iata_code,local_code,home_link"
-                    ""
+                    "content": "Use airports.csv to match airport names to their ICAO codes."
+                    "If a match is found, return the ICAO code. If no match is found, return None."
+                    "If the user input is empty, return an error. If there are multiple matches, "
+                    "return the closest match. If a user inputs an ICAO code, return it as is. "
+                    "Do not return any explanation, additional text, or context, only the ICAO "
+                    "code or none."
                 },
                 {
                     "role": "user", 
-                    "content": f"Decode this: hi"
+                    "content": f"Match the following airport name to its ICAO code using airports.csv, only return the ICAO code: {airport_name}"
                 }
             ],
-            temperature=0.5,
+            temperature=0.1,
         )
 
-        # 4. Print the result
-        print("\nDecoded Weather:")
-        print(completion.choices[0].message.content)
+        #Return the result
+        return(completion.choices[0].message.content)
 
     except Exception as e:
-        print(f"Error: {e}")
-
-    with open("airports.csv", "r") as file:
-        for line in file:
-            if airport_name.lower() in line.lower():
-                return line.split(",")[12]
-        return None        
+        return(f"Error: {e}")
 
 if __name__ == "__main__":
     get_icao_code()

@@ -123,28 +123,23 @@ class METARApp(QWidget):
 
             #Check if input is empty
             if not user_input:
-                QMessageBox.warning(self, "Input Error", "Please enter an airport ID.")
+                QMessageBox.warning(self, "Input Error", "Please enter an airport ID/Name.")
                 return
             
-            #Determine if the input is an ICAO code
+            #Determine if the input is an ICAO code or airport name
             if len(user_input) == 4 and user_input.isalpha():
-                print("ICAO code detected.") #For debugging purposes
                 airport_id = user_input.upper()
             else:
-                airport_id = get_icao_code(user_input)
-                
+                get_icao = get_icao_code(user_input)
+                airport_id = get_icao
+
                 if airport_id is None:
-                    QMessageBox.warning(self, "Input Error", "Airport name not found.")
-
-                if not airport_id:
-                    QMessageBox.warning(self, "Input Error", "Airport not found. Please enter a valid airport name or ICAO code.")
-                return
-    
-
+                    QMessageBox.warning(self, "Input Error", "Airport name not found. Please try again")
+                    return
+                
             #Displaying text
             metar_text = get_metar_data(airport_id)
             response_obj = metar_text[0]
-            print(metar_text) #For debugging purposes
             if response_obj.status_code == 200:
                 if metar_text:
                     lines = response_obj.text.split('\n')
