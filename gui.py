@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
                             QTabWidget,QMessageBox)
 from PyQt5.QtCore import Qt
 import requests
-from data import get_metar_data, get_icao_code
+from data import get_metar_data, get_icao_code, get_raw_metar
 from errors import handle_errors
 
 #Initializing the UI
@@ -13,6 +13,7 @@ class METARApp(QWidget):
         #Input for the airport ID
         self.airportid_label = QLabel("Enter Airport ID: ",self)
         self.airportid_input = QLineEdit(self)
+        self.avaible_inputs_label = QLabel("ICAO code (e.g. KJFK) or Airport Name (e.g. John F. Kennedy International Airport) is accepted", self)
 
         #Button to get the METAR data
         self.get_metar_button = QPushButton("Get METAR",self)
@@ -26,6 +27,7 @@ class METARApp(QWidget):
         self.visibility_label = QLabel("",self)
         self.ceiling_label = QLabel("",self)
         self.clouds_label = QLabel("",self)
+        self.raw_metar_label = QLabel("",self)
 
         #Label to display error
         self.display_error = QTabWidget()
@@ -47,6 +49,7 @@ class METARApp(QWidget):
         input_layout = QVBoxLayout()
         input_layout.addWidget(self.airportid_label)
         input_layout.addWidget(self.airportid_input)
+        input_layout.addWidget(self.avaible_inputs_label)
         input_layout.addWidget(self.get_metar_button)
         self.input_tab.setLayout(input_layout)
 
@@ -61,6 +64,7 @@ class METARApp(QWidget):
         metar_layout.addWidget(self.visibility_label)
         metar_layout.addWidget(self.ceiling_label)
         metar_layout.addWidget(self.clouds_label)
+        metar_layout.addWidget(self.raw_metar_label)
         self.metar_tab.setLayout(metar_layout)
 
         #Naming the tabs and setting the layout
@@ -84,6 +88,7 @@ class METARApp(QWidget):
         #Unique Id's for the widgets
         self.airportid_input.setObjectName("airportid_input")
         self.airportid_label.setObjectName("airportid_label")
+        self.avaible_inputs_label.setObjectName("available_inputs_label") 
         self.get_metar_button.setObjectName("get_metar_button")
         self.temperature_label.setObjectName("temperature_label")
         self.dewpoint_label.setObjectName("dewpoint_label")
@@ -93,6 +98,7 @@ class METARApp(QWidget):
         self.visibility_label.setObjectName("visibility_label")
         self.ceiling_label.setObjectName("ceiling_label")
         self.clouds_label.setObjectName("clouds_label")
+        self.raw_metar_label.setObjectName("raw_metar_label")
     
         #Apply CSS qualities for widgets
         self.setStyleSheet("""
@@ -137,7 +143,7 @@ class METARApp(QWidget):
                     QMessageBox.warning(self, "Input Error", "Airport name not found. Please try again")
                     return
                 
-            #Displaying text
+            #Displaying decoded METAR
             metar_text = get_metar_data(airport_id)
             response_obj = metar_text[0]
             if response_obj.status_code == 200:
@@ -167,6 +173,16 @@ class METARApp(QWidget):
                 #Display HTTP error message
                 error_message = handle_errors(response_obj, "")
                 QMessageBox.critical(self, "ERROR!", error_message[0])
+
+            #Displaying raw METAR
+            raw_metar_text = get_raw_metar(airport_id)
+            if raw_metar_text:
+                self.raw_metar_label.setText(f"Raw METAR: {raw_metar_text[0].text}")
+            else:
+                #Display HTTP error message
+                error_message = handle_errors(response_obj, "")
+                QMessageBox.critical(self, "ERROR!", error_message[0])
+
 
         except requests.exceptions.RequestException as e:
             #Display other errors
