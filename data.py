@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 def get_metar_data(airport_id):
     api_url = (f"https://aviationweather.gov/api/data/metar?ids={airport_id}&format=decoded")
     headers = {
-        "User-Agent": "MyMETARApp/1.0 (contact-vpalaadvaitha@gmail.com)"
+        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
     }
     response = requests.get(api_url, headers=headers)
     return response,airport_id
@@ -15,7 +15,7 @@ def get_metar_data(airport_id):
 def get_raw_metar(airport_id):
     raw_api_url = (f"https://aviationweather.gov/api/data/metar?ids={airport_id}&format=raw")
     headers = {
-        "User-Agent": "MyMETARApp/1.0 (contact-vpalaadvaitha@gmail.com)"
+        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
     }
     response = requests.get(raw_api_url, headers=headers)
     return response,airport_id
@@ -23,12 +23,11 @@ def get_raw_metar(airport_id):
 def get_taf_data(airport_id):
     taf_api_url = (f"https://aviationweather.gov/api/data/taf?ids={airport_id}&format=json")
     headers = {
-        "User-Agent": "MyMETARApp/1.0 (contact-vpalaadvaitha@gmail.com)"
+        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
     }
     response = requests.get(taf_api_url, headers=headers)
     return response,airport_id
-
-
+    
 #Using airports.csv to get ICAO code if the user inputs an airport name instead of the code
 #Note, airports.csv was obtained from: https://ourairports.com/data/
 def get_icao_code(airport_name):
