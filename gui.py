@@ -274,7 +274,7 @@ class FORECASTApp(QWidget):
                     self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
                     
                     winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
-                    if 'wgst'.isnumeric() or 'wgst'.isdecimal() in first_forecast:
+                    if 'wgst' in first_forecast:
                         winds += f" gusting to {first_forecast.get('wgst', 0)} knots"
                     else:
                         winds += " with no gusts"

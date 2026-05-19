@@ -3,21 +3,26 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 
+load_dotenv()
+
+
 #Using the Aviation Weather Center API to get METAR and TAF data.
 #Getting METAR data
 def get_metar_data(airport_id):
+    contact_email = os.getenv("EMAIL")
     api_url = (f"https://aviationweather.gov/api/data/metar?ids={airport_id}&format=decoded")
     headers = {
-        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
+        "User-Agent": f"MyForecastApp/1.0 (contact-{contact_email})"
     }
     response = requests.get(api_url, headers=headers)
     return response,airport_id
 
 #Gettting TAF data
 def get_taf_data(airport_id):
+    contact_email = os.getenv("EMAIL")
     taf_api_url = (f"https://aviationweather.gov/api/data/taf?ids={airport_id}&format=json")
     headers = {
-        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
+        "User-Agent": f"MyForecastApp/1.0 (contact-{contact_email})"
     }
     response = requests.get(taf_api_url, headers=headers)
     return response,airport_id
@@ -27,7 +32,6 @@ def get_taf_data(airport_id):
 def get_icao_code(airport_name):
 
     #Using Groq Llama 3.1 to match airport name to airports.csv
-    load_dotenv()
     client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     try:        
         completion = client.chat.completions.create(
