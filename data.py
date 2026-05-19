@@ -3,7 +3,8 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 
-#We will use the Aviation Weather Center API to get METAR data 
+#Using the Aviation Weather Center API to get METAR and TAF data.
+#Getting METAR data
 def get_metar_data(airport_id):
     api_url = (f"https://aviationweather.gov/api/data/metar?ids={airport_id}&format=decoded")
     headers = {
@@ -12,14 +13,7 @@ def get_metar_data(airport_id):
     response = requests.get(api_url, headers=headers)
     return response,airport_id
 
-def get_raw_metar(airport_id):
-    raw_api_url = (f"https://aviationweather.gov/api/data/metar?ids={airport_id}&format=raw")
-    headers = {
-        "User-Agent": "MyForecastApp/1.0 (contact-vpalaadvaitha@gmail.com)"
-    }
-    response = requests.get(raw_api_url, headers=headers)
-    return response,airport_id
-
+#Gettting TAF data
 def get_taf_data(airport_id):
     taf_api_url = (f"https://aviationweather.gov/api/data/taf?ids={airport_id}&format=json")
     headers = {
@@ -55,8 +49,6 @@ def get_icao_code(airport_name):
             ],
             temperature=0.1,
         )
-
-        #Return the result
         return(completion.choices[0].message.content)
 
     except Exception as e:
@@ -65,5 +57,4 @@ def get_icao_code(airport_name):
 if __name__ == "__main__":
     get_icao_code()
     get_metar_data()
-    get_raw_metar()
     get_taf_data()  

@@ -3,12 +3,12 @@ from PyQt5.QtWidgets import (QWidget, QLabel,
                             QTabWidget,QMessageBox)
 from PyQt5.QtCore import Qt
 import requests
-from data import get_metar_data, get_icao_code, get_raw_metar, get_taf_data
+from data import get_metar_data, get_icao_code, get_taf_data
 from errors import handle_errors
 from datetime import datetime, timezone
 
 #Initializing the UI
-class METARApp(QWidget):
+class FORECASTApp(QWidget):
     def __init__(self):
         super().__init__()
         #Input for the airport ID
@@ -16,8 +16,9 @@ class METARApp(QWidget):
         self.airportid_input = QLineEdit(self)
         self.available_inputs_label = QLabel("ICAO code (e.g. KJFK) or Airport Name (e.g. John F. Kennedy International Airport) is accepted", self)
 
-        #Button to get the METAR data
+        #Button to get the forecast data
         self.get_forecast_button = QPushButton("Get Forecast",self)
+        self.get_forecast_button.setCursor(Qt.PointingHandCursor)
 
         #Labels to display the METAR data
         self.metar_temperature_label = QLabel("",self)
@@ -40,6 +41,22 @@ class METARApp(QWidget):
         self.taf_visibility_label = QLabel("",self)
         self.taf_clouds_label = QLabel("",self)
 
+        #Buttons that acts as a expandable panel to show more forecasts
+        self.general_button = QPushButton("General", self)
+        self.general_button.setCheckable(True)
+        self.general_button.setCursor(Qt.PointingHandCursor)
+
+        #Determing the amount of time periods in the TAF and creating a button for each time period (needs fixing)
+        input = self.airportid_input.text().strip()
+        taf = get_taf_data(input)
+        forecasts = taf[0]
+        forecast_buttons = []
+        count = len(forecasts.json()[0]['fcsts'])
+        for i in range(count):
+            button = self.forecast_x_button = QPushButton(f"Forecast {i+1}", self)
+            forecast_buttons.append(button)
+            self.taf_layout.addWidget(button)
+        
         #Calling the initUI function
         self.initUI()
 
@@ -166,10 +183,11 @@ class METARApp(QWidget):
         """)
 
         #Adding functionality to the button
-        self.get_forecast_button.clicked.connect(self.display_forecast)
+        self.get_forecast_button.clicked.connect(self.display_metar)
+        self.get_forecast_button.clicked.connect(self.display_taf)
 
-    #Displaying the forecast data
-    def display_forecast(self):
+    #Displaying METAR
+    def display_metar(self):
         try:
             user_input = self.airportid_input.text().strip()
 
@@ -189,7 +207,7 @@ class METARApp(QWidget):
                     QMessageBox.warning(self, "Input Error", "Airport name not found. Please try again")
                     return
                 
-            #Displaying decoded METAR
+            #Displaying decoded and raw METAR
             metar_text = get_metar_data(airport_id)
             metar_response_obj = metar_text[0]
             if metar_response_obj.status_code == 200:
@@ -197,6 +215,9 @@ class METARApp(QWidget):
                     lines = metar_response_obj.text.split('\n')
                     for line in lines:
                         clean_line = line.strip()
+                        if "Text" in clean_line:
+                            replaced_line = clean_line.replace("Text", "Raw METAR")
+                            self.raw_metar_label.setText(replaced_line)
                         if "Temperature" in clean_line:
                             self.metar_temperature_label.setText(clean_line)
                         elif "Dewpoint" in clean_line:
@@ -216,60 +237,62 @@ class METARApp(QWidget):
                         elif "Pressure" in clean_line:
                             self.metar_sea_level_pressure_label.setText(clean_line)
             else:
-                #Display HTTP error message
                 error_message = handle_errors(metar_response_obj, "")
                 QMessageBox.critical(self, "ERROR!", error_message[0])
-
-            #Displaying raw METAR
-            raw_metar_text = get_raw_metar(airport_id)
-            if raw_metar_text:
-                self.raw_metar_label.setText(f"Raw METAR: {raw_metar_text[0].text}")
-            else:
-                #Display HTTP error message
-                error_message = handle_errors(metar_response_obj, "")
-                QMessageBox.critical(self, "ERROR!", error_message[0])
-
-            #Displaying TAF (Only gets the first forecast)
-            taf_text = get_taf_data(airport_id)
-            taf_response_obj = taf_text[0]
-            if taf_response_obj:
-                general = taf_response_obj.json()[0]
-                issue_time = general.get('issueTime', 'N/A')
-                issue_time_dt = datetime.fromisoformat(issue_time.replace('Z', '+00:00'))
-                valid_time_from = general.get('validTimeFrom', 'N/A')
-                valid_time_from_dt = datetime.fromtimestamp(valid_time_from, tz=timezone.utc)
-                valid_time_to = general.get('validTimeTo', 'N/A')
-                valid_time_to_dt = datetime.fromtimestamp(valid_time_to, tz=timezone.utc)
-                remarks = general.get('remarks', 'N/A')
-
-                self.taf_issue_time_label.setText(f"Issue Time: {issue_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                self.taf_valid_time_from_label.setText(f"Valid Time From: {valid_time_from_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                self.taf_valid_time_to_label.setText(f"Valid Time To: {valid_time_to_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                self.taf_remarks_label.setText(f"Remarks: {remarks}")
-
-                first_forecast = taf_response_obj.json()[0]['fcsts'][0]
-                change_indicator = first_forecast.get('fcstChange', 'N/A')
-                self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
-                
-                winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
-                if 'wgst'.isnumeric() or 'wgst'.isdecimal() in first_forecast:
-                    winds += f" gusting to {first_forecast.get('wgst', 0)} knots"
-                else:
-                    winds += " with no gusts"
-                self.taf_winds_label.setText(f"Wind Info: {winds}")
-
-                visibility = first_forecast.get('visib', 'N/A')
-                self.taf_visibility_label.setText(f"Visibility: {visibility} statute miles")
-
-                if 'clouds' in first_forecast:
-                    cloud = first_forecast['clouds'][0]
-                    cover = cloud.get('cover', 'N/A')
-                    base = cloud.get('base', 'N/A')
-                    self.taf_clouds_label.setText(f"Clouds: {cover} clouds at {base} feet")
-                else:
-                    self.taf_clouds_label.setText("Clouds: CLEAR")
 
         except requests.exceptions.RequestException as e:
-            #Display other errors
+            error_message = handle_errors(e, "")
+            QMessageBox.critical(self, "ERROR!", error_message[0])
+
+    #Displaying TAF
+    def display_taf(self):
+        try:
+            user_input = self.airportid_input.text().strip()
+            airport_id = user_input.upper()
+            taf_text = get_taf_data(airport_id)
+            taf_response_obj = taf_text[0]
+            if taf_response_obj.status_code == 200:
+                if taf_response_obj:
+                    general = taf_response_obj.json()[0]
+                    issue_time = general.get('issueTime', 'N/A')
+                    issue_time_dt = datetime.fromisoformat(issue_time.replace('Z', '+00:00'))
+                    valid_time_from = general.get('validTimeFrom', 'N/A')
+                    valid_time_from_dt = datetime.fromtimestamp(valid_time_from, tz=timezone.utc)
+                    valid_time_to = general.get('validTimeTo', 'N/A')
+                    valid_time_to_dt = datetime.fromtimestamp(valid_time_to, tz=timezone.utc)
+                    remarks = general.get('remarks', 'N/A')
+                    if remarks == "":
+                        remarks = "N/A"
+
+                    self.taf_issue_time_label.setText(f"Issue Time: {issue_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+                    self.taf_valid_time_from_label.setText(f"Valid Time From: {valid_time_from_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+                    self.taf_valid_time_to_label.setText(f"Valid Time To: {valid_time_to_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+                    self.taf_remarks_label.setText(f"Remarks: {remarks}")
+
+                    first_forecast = taf_response_obj.json()[0]['fcsts'][0]
+                    change_indicator = first_forecast.get('fcstChange', 'N/A')
+                    self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
+                    
+                    winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
+                    if 'wgst'.isnumeric() or 'wgst'.isdecimal() in first_forecast:
+                        winds += f" gusting to {first_forecast.get('wgst', 0)} knots"
+                    else:
+                        winds += " with no gusts"
+                    self.taf_winds_label.setText(f"Wind Info: {winds}")
+
+                    visibility = first_forecast.get('visib', 'N/A')
+                    self.taf_visibility_label.setText(f"Visibility: {visibility} statute miles")
+
+                    if 'clouds' in first_forecast:
+                        cloud = first_forecast['clouds'][0]
+                        cover = cloud.get('cover', 'N/A')
+                        base = cloud.get('base', 'N/A')
+                        self.taf_clouds_label.setText(f"Clouds: {cover} clouds at {base} feet")
+                    else:
+                        self.taf_clouds_label.setText("Clouds: CLEAR")
+            else:
+                error_message = handle_errors(taf_response_obj, "")
+                QMessageBox.critical(self, "ERROR!", error_message[0])
+        except requests.exceptions.RequestException as e:
             error_message = handle_errors(e, "")
             QMessageBox.critical(self, "ERROR!", error_message[0])
