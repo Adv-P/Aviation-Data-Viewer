@@ -1,0 +1,5 @@
+#External Dependencies
+requests
+groq
+python-dotenv
+PyQt5
