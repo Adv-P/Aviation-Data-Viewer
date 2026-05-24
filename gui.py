@@ -47,16 +47,22 @@ class FORECASTApp(QWidget):
         self.general_button.setCursor(Qt.PointingHandCursor)
 
         #Determing the amount of time periods in the TAF and creating a button for each time period (needs fixing)
-        input = self.airportid_input.text().strip()
-        taf = get_taf_data(input)
-        forecasts = taf[0]
-        forecast_buttons = []
-        count = len(forecasts.json()[0]['fcsts'])
-        for i in range(count):
-            button = self.forecast_x_button = QPushButton(f"Forecast {i+1}", self)
-            forecast_buttons.append(button)
-            self.taf_layout.addWidget(button)
+        user_input = self.airportid_input.text().strip()
+
+        taf_data = get_taf_data(user_input)
+        forecasts = taf_data[0]
         
+        count = len(forecasts.json()[0]['fcsts'])
+
+        self.get_forecast_buttons = []
+
+        for i in range(count):
+            button = QPushButton(f"Time Period {i+1}", self)
+            button.setCheckable(True)
+            button.setCursor(Qt.PointingHandCursor)
+            self.taf_layout.addWidget(button)
+            self.get_forecast_buttons.append(button)
+ 
         #Calling the initUI function
         self.initUI()
 
