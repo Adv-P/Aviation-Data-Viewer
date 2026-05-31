@@ -1,3 +1,5 @@
+import re
+
 from PyQt5.QtWidgets import (QWidget, QLabel, 
                             QLineEdit, QPushButton, QVBoxLayout,
                             QTabWidget,QMessageBox)
@@ -6,6 +8,7 @@ import requests
 from data import get_metar_data, get_icao_code, get_taf_data
 from errors import handle_errors
 from datetime import datetime, timezone
+import re
 
 #Initializing the UI
 class FORECASTApp(QWidget):
@@ -21,6 +24,7 @@ class FORECASTApp(QWidget):
         self.get_forecast_button.setCursor(Qt.PointingHandCursor)
 
         #Labels to display the METAR data
+        self.metar_observed_at = QLabel("",self)
         self.metar_temperature_label = QLabel("",self)
         self.metar_dewpoint_label = QLabel("",self)
         self.metar_altimeter_label = QLabel("",self)
@@ -32,37 +36,35 @@ class FORECASTApp(QWidget):
         self.raw_metar_label = QLabel("",self)
 
         #Labels to display TAF data
+        
+        #General TAF info
+        self.taf_general_button = QPushButton("General", self)
+        self.taf_general_button.setCheckable(True)
+        self.taf_general_button.setCursor(Qt.PointingHandCursor)
+
+        #General TAF info
+        self.taf_db_pop_time_label = QLabel("",self)
+        self.taf_bulletin_time_label = QLabel("",self)
         self.taf_issue_time_label = QLabel("",self)
         self.taf_valid_time_from_label = QLabel("",self)
         self.taf_valid_time_to_label = QLabel("",self)
+        self.taf_recent_reports_label = QLabel("",self)
+        self.taf_prior_report_flag_label = QLabel("",self)
         self.taf_remarks_label = QLabel("",self)
+        self.taf_lattitude_label = QLabel("",self)
+        self.taf_longitude_label = QLabel("",self)
+        self.taf_elevation_label = QLabel("",self)
+        self.raw_taf_label = QLabel("",self)
+
+        #Forecast time period info
         self.taf_change_indicator_label = QLabel("",self)
         self.taf_winds_label = QLabel("",self)
         self.taf_visibility_label = QLabel("",self)
         self.taf_clouds_label = QLabel("",self)
 
-        #Buttons that acts as a expandable panel to show more forecasts
-        self.general_button = QPushButton("General", self)
-        self.general_button.setCheckable(True)
-        self.general_button.setCursor(Qt.PointingHandCursor)
-
-        #Determing the amount of time periods in the TAF and creating a button for each time period (needs fixing)
-        user_input = self.airportid_input.text().strip()
-
-        taf_data = get_taf_data(user_input)
-        forecasts = taf_data[0]
-        
-        count = len(forecasts.json()[0]['fcsts'])
-
+        #Buttons set
         self.get_forecast_buttons = []
 
-        for i in range(count):
-            button = QPushButton(f"Time Period {i+1}", self)
-            button.setCheckable(True)
-            button.setCursor(Qt.PointingHandCursor)
-            self.taf_layout.addWidget(button)
-            self.get_forecast_buttons.append(button)
- 
         #Calling the initUI function
         self.initUI()
 
@@ -87,6 +89,9 @@ class FORECASTApp(QWidget):
         #Adding widgets to the "METAR" tab
         self.metar_tab = QWidget()
         metar_layout = QVBoxLayout()
+        metar_layout.setContentsMargins(20, 20, 20, 20)
+        metar_layout.setSpacing(15)
+        metar_layout.addWidget(self.metar_observed_at)
         metar_layout.addWidget(self.metar_temperature_label)
         metar_layout.addWidget(self.metar_dewpoint_label)
         metar_layout.addWidget(self.metar_altimeter_label)
@@ -100,16 +105,29 @@ class FORECASTApp(QWidget):
 
         #Adding widgets to the "TAF" tab
         self.taf_tab = QWidget()
-        taf_layout = QVBoxLayout()
-        taf_layout.addWidget(self.taf_issue_time_label)
-        taf_layout.addWidget(self.taf_valid_time_from_label)
-        taf_layout.addWidget(self.taf_valid_time_to_label)
-        taf_layout.addWidget(self.taf_remarks_label)
-        taf_layout.addWidget(self.taf_change_indicator_label)
-        taf_layout.addWidget(self.taf_winds_label)
-        taf_layout.addWidget(self.taf_visibility_label)
-        taf_layout.addWidget(self.taf_clouds_label)
-        self.taf_tab.setLayout(taf_layout)
+        self.taf_layout = QVBoxLayout()
+
+        #General TAF info
+        self.taf_layout.addWidget(self.taf_general_button)
+        self.taf_layout.addWidget(self.taf_db_pop_time_label)
+        self.taf_layout.addWidget(self.taf_bulletin_time_label)
+        self.taf_layout.addWidget(self.taf_issue_time_label)
+        self.taf_layout.addWidget(self.taf_valid_time_from_label)
+        self.taf_layout.addWidget(self.taf_valid_time_to_label)
+        self.taf_layout.addWidget(self.taf_recent_reports_label)
+        self.taf_layout.addWidget(self.taf_prior_report_flag_label)
+        self.taf_layout.addWidget(self.taf_remarks_label)
+        self.taf_layout.addWidget(self.taf_lattitude_label)
+        self.taf_layout.addWidget(self.taf_longitude_label)
+        self.taf_layout.addWidget(self.taf_elevation_label)
+        self.taf_layout.addWidget(self.raw_taf_label)
+
+        #Forecasts (TAF)
+        self.taf_layout.addWidget(self.taf_change_indicator_label)
+        self.taf_layout.addWidget(self.taf_winds_label)
+        self.taf_layout.addWidget(self.taf_visibility_label)
+        self.taf_layout.addWidget(self.taf_clouds_label)
+        self.taf_tab.setLayout(self.taf_layout)
 
         #Naming the tabs and setting the layout
         self.tabs.addTab(self.input_tab, "Input")
@@ -123,6 +141,7 @@ class FORECASTApp(QWidget):
         self.airportid_input.setAlignment(Qt.AlignCenter)
 
         #Centering Everything (METAR)
+        self.metar_observed_at.setAlignment(Qt.AlignCenter)
         self.metar_temperature_label.setAlignment(Qt.AlignCenter)
         self.metar_dewpoint_label.setAlignment(Qt.AlignCenter)
         self.metar_altimeter_label.setAlignment(Qt.AlignCenter)
@@ -132,11 +151,21 @@ class FORECASTApp(QWidget):
         self.metar_ceiling_label.setAlignment(Qt.AlignCenter)
         self.metar_clouds_label.setAlignment(Qt.AlignCenter)
 
-        #Centering Everything (TAF)
+        #Centering Everything (TAF general)
+        self.taf_db_pop_time_label.setAlignment(Qt.AlignCenter)
+        self.taf_bulletin_time_label.setAlignment(Qt.AlignCenter)
         self.taf_issue_time_label.setAlignment(Qt.AlignCenter)
         self.taf_valid_time_from_label.setAlignment(Qt.AlignCenter)
         self.taf_valid_time_to_label.setAlignment(Qt.AlignCenter)
+        self.taf_recent_reports_label.setAlignment(Qt.AlignCenter)
+        self.taf_prior_report_flag_label.setAlignment(Qt.AlignCenter)
         self.taf_remarks_label.setAlignment(Qt.AlignCenter)
+        self.taf_lattitude_label.setAlignment(Qt.AlignCenter)
+        self.taf_longitude_label.setAlignment(Qt.AlignCenter)
+        self.taf_elevation_label.setAlignment(Qt.AlignCenter)
+        self.raw_taf_label.setAlignment(Qt.AlignCenter)
+
+        #Centering Everything (TAF forecasts)
         self.taf_change_indicator_label.setAlignment(Qt.AlignCenter)
         self.taf_winds_label.setAlignment(Qt.AlignCenter)
         self.taf_visibility_label.setAlignment(Qt.AlignCenter)
@@ -149,6 +178,7 @@ class FORECASTApp(QWidget):
         self.get_forecast_button.setObjectName("get_forecast_button")
 
         #Unique Id's for the widgets (METAR)
+        self.metar_observed_at.setObjectName("observed_at")
         self.metar_temperature_label.setObjectName("temperature_label")
         self.metar_dewpoint_label.setObjectName("dewpoint_label")
         self.metar_altimeter_label.setObjectName("altimeter_label")
@@ -159,11 +189,21 @@ class FORECASTApp(QWidget):
         self.metar_clouds_label.setObjectName("clouds_label")
         self.raw_metar_label.setObjectName("raw_metar_label")
 
-        #Unique Id's for the widgets (TAF)
+        #Unique Id's for the widgets (TAF general)      
+        self.taf_db_pop_time_label.setObjectName("taf_db_pop_time_label")
+        self.taf_bulletin_time_label.setObjectName("taf_bulletin_time_label")
         self.taf_issue_time_label.setObjectName("taf_issue_time_label")
         self.taf_valid_time_from_label.setObjectName("taf_valid_time_from_label")
         self.taf_valid_time_to_label.setObjectName("taf_valid_time_to_label")
+        self.taf_recent_reports_label.setObjectName("taf_recent_reports_label")
+        self.taf_prior_report_flag_label.setObjectName("taf_prior_report_flag_label")
         self.taf_remarks_label.setObjectName("taf_remarks_label")
+        self.taf_longitude_label.setObjectName("taf_longitude_label")
+        self.taf_lattitude_label.setObjectName("taf_lattitude_label")
+        self.taf_elevation_label.setObjectName("taf_elevation_label")
+        self.raw_taf_label.setObjectName("raw_taf_label")
+
+        #Unique Id's for the widgets (TAF forecasts)
         self.taf_change_indicator_label.setObjectName("taf_change_indicator_label")
         self.taf_winds_label.setObjectName("taf_winds_label")
         self.taf_visibility_label.setObjectName("taf_visibility_label")
@@ -191,6 +231,7 @@ class FORECASTApp(QWidget):
         #Adding functionality to the button
         self.get_forecast_button.clicked.connect(self.display_metar)
         self.get_forecast_button.clicked.connect(self.display_taf)
+        self.taf_general_button.clicked.connect(self.general_taf_info)
 
     #Displaying METAR
     def display_metar(self):
@@ -221,6 +262,11 @@ class FORECASTApp(QWidget):
                     lines = metar_response_obj.text.split('\n')
                     for line in lines:
                         clean_line = line.strip()
+                        match = re.search(r'observed at (.*)', clean_line)
+                        if match:
+                            self.metar_observed_at.setText(f"Observed at: {match.group(0)}")
+                        else:
+                            self.metar_observed_at.setText("Observed at: N/A")
                         if "Text" in clean_line:
                             replaced_line = clean_line.replace("Text", "Raw METAR")
                             self.raw_metar_label.setText(replaced_line)
@@ -251,54 +297,119 @@ class FORECASTApp(QWidget):
             QMessageBox.critical(self, "ERROR!", error_message[0])
 
     #Displaying TAF
-    def display_taf(self):
+    def display_taf(self,current_forecast):
         try:
-            user_input = self.airportid_input.text().strip()
+            user_input = self.airportid_input.text().strip()            
             airport_id = user_input.upper()
             taf_text = get_taf_data(airport_id)
             taf_response_obj = taf_text[0]
+
+            #Delete old buttons
+            if hasattr(self, 'get_forecast_buttons'):
+                for old_button in self.get_forecast_buttons:
+                    self.taf_layout.removeWidget(old_button)
+                    old_button.deleteLater()
+
+            self.get_forecast_buttons = []
+
             if taf_response_obj.status_code == 200:
                 if taf_response_obj:
+                    #Determing the amount of time periods in the TAF and creating a button for each time period            
                     general = taf_response_obj.json()[0]
-                    issue_time = general.get('issueTime', 'N/A')
-                    issue_time_dt = datetime.fromisoformat(issue_time.replace('Z', '+00:00'))
-                    valid_time_from = general.get('validTimeFrom', 'N/A')
-                    valid_time_from_dt = datetime.fromtimestamp(valid_time_from, tz=timezone.utc)
-                    valid_time_to = general.get('validTimeTo', 'N/A')
-                    valid_time_to_dt = datetime.fromtimestamp(valid_time_to, tz=timezone.utc)
-                    remarks = general.get('remarks', 'N/A')
-                    if remarks == "":
-                        remarks = "N/A"
+                    self.current_general_data = general
+                    forecast_list = general.get('fcsts', [])
+                    count = len(forecast_list)
 
-                    self.taf_issue_time_label.setText(f"Issue Time: {issue_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                    self.taf_valid_time_from_label.setText(f"Valid Time From: {valid_time_from_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                    self.taf_valid_time_to_label.setText(f"Valid Time To: {valid_time_to_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
-                    self.taf_remarks_label.setText(f"Remarks: {remarks}")
+                    for i in range(count):
+                        button = QPushButton(f"Time Period {i+1}", self)
+                        button.setCheckable(True)
+                        button.setCursor(Qt.PointingHandCursor)
 
-                    first_forecast = taf_response_obj.json()[0]['fcsts'][0]
-                    change_indicator = first_forecast.get('fcstChange', 'N/A')
-                    self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
-                    
-                    winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
-                    if 'wgst' in first_forecast:
-                        winds += f" gusting to {first_forecast.get('wgst', 0)} knots"
-                    else:
-                        winds += " with no gusts"
-                    self.taf_winds_label.setText(f"Wind Info: {winds}")
-
-                    visibility = first_forecast.get('visib', 'N/A')
-                    self.taf_visibility_label.setText(f"Visibility: {visibility} statute miles")
-
-                    if 'clouds' in first_forecast:
-                        cloud = first_forecast['clouds'][0]
-                        cover = cloud.get('cover', 'N/A')
-                        base = cloud.get('base', 'N/A')
-                        self.taf_clouds_label.setText(f"Clouds: {cover} clouds at {base} feet")
-                    else:
-                        self.taf_clouds_label.setText("Clouds: CLEAR")
+                        current_fcst = forecast_list[i]
+                        button.clicked.connect(lambda checked, data=current_fcst: self.update_taf_labels(data))
+                        self.get_forecast_buttons.append(button)
+                        self.taf_layout.addWidget(button)
+                    if count > 0:
+                        self.update_taf_labels(forecast_list[0])
             else:
                 error_message = handle_errors(taf_response_obj, "")
                 QMessageBox.critical(self, "ERROR!", error_message[0])
         except requests.exceptions.RequestException as e:
             error_message = handle_errors(e, "")
             QMessageBox.critical(self, "ERROR!", error_message[0])
+
+    #Forecast time period info
+    def update_taf_labels(self,forecast_list):
+        user_input = self.airportid_input.text().strip()            
+        airport_id = user_input.upper()
+        taf_text = get_taf_data(airport_id)
+        taf_response_obj = taf_text[0]
+        first_forecast = taf_response_obj.json()[0]['fcsts'][0]
+        change_indicator = first_forecast.get('fcstChange', 'N/A')
+        self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
+                    
+        winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
+        if 'wgst' in first_forecast:
+            winds += f" gusting to {first_forecast.get('wgst', 0)} knots"
+        else:
+            winds += " with no gusts"
+        self.taf_winds_label.setText(f"Wind Info: {winds}")
+
+        visibility = first_forecast.get('visib', 'N/A')
+        self.taf_visibility_label.setText(f"Visibility: {visibility} statute miles")
+
+        if 'clouds' in first_forecast:
+            cloud = first_forecast['clouds'][0]
+            cover = cloud.get('cover', 'N/A')
+            base = cloud.get('base', 'N/A')
+            self.taf_clouds_label.setText(f"Clouds: {cover} clouds at {base} feet")
+        else:
+            self.taf_clouds_label.setText("Clouds: CLEAR")
+
+    #Gerneral TAF info  
+    def general_taf_info(self):    
+        if not hasattr(self, 'current_general_data') or not self.current_general_data:
+            return
+        
+        general = self.current_general_data
+                           
+        db_pop_time = general.get('dbPopTime', 'N/A')
+        db_pop_time_dt = datetime.fromisoformat(db_pop_time.replace('Z', '+00:00'))
+        self.taf_db_pop_time_label.setText(f"Database POP Time: {db_pop_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        bulletin_time = general.get('bulletinTime', 'N/A')
+        bulletin_time_dt = datetime.fromisoformat(bulletin_time.replace('Z', '+00:00'))
+        self.taf_bulletin_time_label.setText(f"Bulletin Time: {bulletin_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+            
+        issue_time = general.get('issueTime', 'N/A')
+        issue_time_dt = datetime.fromisoformat(issue_time.replace('Z', '+00:00'))
+        self.taf_issue_time_label.setText(f"Issue Time: {issue_time_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        valid_time_from = general.get('validTimeFrom', 'N/A')
+        valid_time_from_dt = datetime.fromtimestamp(valid_time_from, tz=timezone.utc)
+        self.taf_valid_time_from_label.setText(f"Valid Time From: {valid_time_from_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        valid_time_to = general.get('validTimeTo', 'N/A')
+        valid_time_to_dt = datetime.fromtimestamp(valid_time_to, tz=timezone.utc)
+        self.taf_valid_time_to_label.setText(f"Valid Time To: {valid_time_to_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        recent_reports = general.get('mostRecent') or "N/A"
+        self.taf_recent_reports_label.setText(f"Recent Reports: {recent_reports}")
+        
+        prior_report_flag = general.get('prior') or "N/A"
+        self.taf_prior_report_flag_label.setText(f"Prior Report Flag: {prior_report_flag}")
+
+        remarks = general.get('remarks') or "N/A"
+        self.taf_remarks_label.setText(f"Remarks: {remarks}")
+        
+        latitude = general.get('lat', 'N/A')
+        self.taf_lattitude_label.setText(f"Latitude: {latitude}")
+        
+        longitude = general.get('lon', 'N/A')
+        self.taf_longitude_label.setText(f"Longitude: {longitude}")
+
+        elevation = general.get('elev', 'N/A')
+        self.taf_elevation_label.setText(f"Elevation: {elevation} feet")
+            
+        raw_taf = general.get('rawTAF', 'N/A')
+        self.raw_taf_label.setText(f"Raw TAF: {raw_taf}")
