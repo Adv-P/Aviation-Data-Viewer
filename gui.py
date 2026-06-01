@@ -1,8 +1,8 @@
 import re
 
-from PyQt5.QtWidgets import (QWidget, QLabel, 
+from PyQt5.QtWidgets import (QWidget, QLabel, QSpacerItem,
                             QLineEdit, QPushButton, QVBoxLayout,
-                            QTabWidget,QMessageBox)
+                            QTabWidget,QMessageBox, QSizePolicy)
 from PyQt5.QtCore import Qt
 import requests
 from data import get_metar_data, get_icao_code, get_taf_data
@@ -34,15 +34,13 @@ class FORECASTApp(QWidget):
         self.metar_ceiling_label = QLabel("",self)
         self.metar_clouds_label = QLabel("",self)
         self.raw_metar_label = QLabel("",self)
-
-        #Labels to display TAF data
         
-        #General TAF info
+        #Display TAF buttons 
         self.taf_general_button = QPushButton("General", self)
         self.taf_general_button.setCheckable(True)
         self.taf_general_button.setCursor(Qt.PointingHandCursor)
 
-        #General TAF info
+        #Labels to display general TAF info
         self.taf_db_pop_time_label = QLabel("",self)
         self.taf_bulletin_time_label = QLabel("",self)
         self.taf_issue_time_label = QLabel("",self)
@@ -56,10 +54,19 @@ class FORECASTApp(QWidget):
         self.taf_elevation_label = QLabel("",self)
         self.raw_taf_label = QLabel("",self)
 
-        #Forecast time period info
-        self.taf_change_indicator_label = QLabel("",self)
+        #Labels to display forecast time period info
+        self.taf_time_from_label = QLabel("",self)
+        self.taf_time_to_label = QLabel("",self)
+        self.taf_time_bec_label = QLabel("",self)
+        self.taf_forecast_change_label = QLabel("",self)
         self.taf_winds_label = QLabel("",self)
+        self.taf_wind_shear_label = QLabel("",self)
+        self.taf_altimeter_label = QLabel("",self)
         self.taf_visibility_label = QLabel("",self)
+        self.taf_vertical_visibility_label = QLabel("",self)
+        self.taf_weather_string = QLabel("",self)
+        self.taf_ice_turbulence_label = QLabel("",self)
+        self.taf_temperature_label = QLabel("",self)   
         self.taf_clouds_label = QLabel("",self)
 
         #Buttons set
@@ -89,8 +96,8 @@ class FORECASTApp(QWidget):
         #Adding widgets to the "METAR" tab
         self.metar_tab = QWidget()
         metar_layout = QVBoxLayout()
-        metar_layout.setContentsMargins(20, 20, 20, 20)
-        metar_layout.setSpacing(15)
+        metar_layout.setContentsMargins(0, 0, 0, 0)
+        metar_layout.setSpacing(0)
         metar_layout.addWidget(self.metar_observed_at)
         metar_layout.addWidget(self.metar_temperature_label)
         metar_layout.addWidget(self.metar_dewpoint_label)
@@ -101,11 +108,14 @@ class FORECASTApp(QWidget):
         metar_layout.addWidget(self.metar_ceiling_label)
         metar_layout.addWidget(self.metar_clouds_label)
         metar_layout.addWidget(self.raw_metar_label)
+        metar_layout.addSpacerItem(QSpacerItem(500, 200, QSizePolicy.Minimum, QSizePolicy.Expanding))
         self.metar_tab.setLayout(metar_layout)
 
         #Adding widgets to the "TAF" tab
         self.taf_tab = QWidget()
         self.taf_layout = QVBoxLayout()
+        self.taf_layout.setContentsMargins(0, 0, 0, 0)
+        self.taf_layout.setSpacing(0)
 
         #General TAF info
         self.taf_layout.addWidget(self.taf_general_button)
@@ -123,9 +133,18 @@ class FORECASTApp(QWidget):
         self.taf_layout.addWidget(self.raw_taf_label)
 
         #Forecasts (TAF)
-        self.taf_layout.addWidget(self.taf_change_indicator_label)
+        self.taf_layout.addWidget(self.taf_time_from_label)
+        self.taf_layout.addWidget(self.taf_time_to_label)
+        self.taf_layout.addWidget(self.taf_time_bec_label)
+        self.taf_layout.addWidget(self.taf_forecast_change_label)
         self.taf_layout.addWidget(self.taf_winds_label)
+        self.taf_layout.addWidget(self.taf_wind_shear_label)
+        self.taf_layout.addWidget(self.taf_altimeter_label)
         self.taf_layout.addWidget(self.taf_visibility_label)
+        self.taf_layout.addWidget(self.taf_vertical_visibility_label)
+        self.taf_layout.addWidget(self.taf_weather_string)
+        self.taf_layout.addWidget(self.taf_ice_turbulence_label)
+        self.taf_layout.addWidget(self.taf_temperature_label)
         self.taf_layout.addWidget(self.taf_clouds_label)
         self.taf_tab.setLayout(self.taf_layout)
 
@@ -166,9 +185,18 @@ class FORECASTApp(QWidget):
         self.raw_taf_label.setAlignment(Qt.AlignCenter)
 
         #Centering Everything (TAF forecasts)
-        self.taf_change_indicator_label.setAlignment(Qt.AlignCenter)
+        self.taf_time_to_label.setAlignment(Qt.AlignCenter)
+        self.taf_time_from_label.setAlignment(Qt.AlignCenter)
+        self.taf_time_bec_label.setAlignment(Qt.AlignCenter)
+        self.taf_forecast_change_label.setAlignment(Qt.AlignCenter)
         self.taf_winds_label.setAlignment(Qt.AlignCenter)
+        self.taf_wind_shear_label.setAlignment(Qt.AlignCenter)
+        self.taf_altimeter_label.setAlignment(Qt.AlignCenter)
         self.taf_visibility_label.setAlignment(Qt.AlignCenter)
+        self.taf_vertical_visibility_label.setAlignment(Qt.AlignCenter)
+        self.taf_weather_string.setAlignment(Qt.AlignCenter)
+        self.taf_ice_turbulence_label.setAlignment(Qt.AlignCenter)
+        self.taf_temperature_label.setAlignment(Qt.AlignCenter)
         self.taf_clouds_label.setAlignment(Qt.AlignCenter)
         
         #Unique Id's for the widgets (general)
@@ -204,9 +232,18 @@ class FORECASTApp(QWidget):
         self.raw_taf_label.setObjectName("raw_taf_label")
 
         #Unique Id's for the widgets (TAF forecasts)
-        self.taf_change_indicator_label.setObjectName("taf_change_indicator_label")
+        self.taf_time_from_label.setObjectName("taf_time_from_label")
+        self.taf_time_to_label.setObjectName("taf_time_to_label")
+        self.taf_time_bec_label.setObjectName("taf_time_bec_label")
+        self.taf_forecast_change_label.setObjectName("taf_forecast_change_label")
         self.taf_winds_label.setObjectName("taf_winds_label")
+        self.taf_wind_shear_label.setObjectName("taf_wind_shear_label")
+        self.taf_altimeter_label.setObjectName("taf_altimeter_label")
         self.taf_visibility_label.setObjectName("taf_visibility_label")
+        self.taf_vertical_visibility_label.setObjectName("taf_vertical_visibility_label")
+        self.taf_weather_string.setObjectName("taf_weather_string")
+        self.taf_ice_turbulence_label.setObjectName("taf_ice_turbulence_label")
+        self.taf_temperature_label.setObjectName("taf_temperature_label")
         self.taf_clouds_label.setObjectName("taf_clouds_label") 
     
         #Apply CSS qualities for widgets
@@ -345,8 +382,20 @@ class FORECASTApp(QWidget):
         taf_text = get_taf_data(airport_id)
         taf_response_obj = taf_text[0]
         first_forecast = taf_response_obj.json()[0]['fcsts'][0]
-        change_indicator = first_forecast.get('fcstChange', 'N/A')
-        self.taf_change_indicator_label.setText(f"Change Indicator: {change_indicator}")
+
+        time_from = first_forecast.get("timeFrom", "N/A")
+        time_from_dt = datetime.fromtimestamp(time_from, tz=timezone.utc)
+        self.taf_valid_time_from_label.setText(f"Valid Time From: {time_from_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        time_to = first_forecast.get("timeTo", "N/A")
+        time_to_dt = datetime.fromtimestamp(time_to, tz=timezone.utc)
+        self.taf_valid_time_to_label.setText(f"Valid Time To: {time_to_dt.strftime('%B %d, %Y at %I:%M %p')} UTC")
+
+        time_bec = first_forecast.get('timeBEC') or "N/A"
+        self.taf_time_bec_label.setText(f"Time BEC: {time_bec}")
+
+        forecast_change = first_forecast.get('fcstChange', 'N/A')
+        self.taf_forecast_change_label.setText(f"Forecast Change: {forecast_change}")
                     
         winds = f"{first_forecast.get('wdir', 'N/A')}° at {first_forecast.get('wspd', 0)} knots"
         if 'wgst' in first_forecast:
@@ -355,8 +404,34 @@ class FORECASTApp(QWidget):
             winds += " with no gusts"
         self.taf_winds_label.setText(f"Wind Info: {winds}")
 
+
+        height = first_forecast.get('wshearHgt')
+        if height is None:
+            wind_shear = "No wind shear"
+        else:
+            direction = first_forecast.get('wshearDir', 'N/A')
+            speed = first_forecast.get('wshearSpd')
+            wind_shear = f"Wind shear at {height} feet from {direction}° at {speed} knots"
+        wind_shear = f"Wind shear at {first_forecast.get('wshearHgt', 'N/A')} feet from {first_forecast.get('wshearDir', 0)}°"
+        self.taf_winds_label.setText(f"Wind Shear Info: {wind_shear}")
+
+        altimeter = first_forecast.get('altim', 'N/A')
+        self.taf_altimeter_label.setText(f"Altimeter: {altimeter} inches of mercury")
+
         visibility = first_forecast.get('visib', 'N/A')
         self.taf_visibility_label.setText(f"Visibility: {visibility} statute miles")
+
+        vertical_visibility = first_forecast.get('vertVis') or 'N/A'
+        self.taf_vertical_visibility_label.setText(f"Vertical Visibility: {vertical_visibility} feet")
+
+        weather_string = first_forecast.get('wxString', 'N/A')
+        self.taf_weather_string.setText(f"Weather: {weather_string}")
+
+        ice_turbulence = first_forecast.get('icgTurb') or "N/A"
+        self.taf_ice_turbulence_label.setText(f"Ice/Turbulence: {ice_turbulence}")
+
+        temperature = first_forecast.get('temp') or "N/A"
+        self.taf_temperature_label.setText(f"Temperature: {temperature}°C")
 
         if 'clouds' in first_forecast:
             cloud = first_forecast['clouds'][0]
